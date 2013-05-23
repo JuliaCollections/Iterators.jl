@@ -14,8 +14,8 @@ export
     chain,
     product,
     distinct,
-    partition
-
+    partition,
+    unfold
 
 # Infinite counting
 
@@ -331,6 +331,18 @@ function next(it::Partition, state)
 end
 
 done(it::Partition, state) = done(it.xs, state[1])
+
+# Unfolding (anamorphism)
+
+immutable Unfold{T}
+    seed::T
+    f::Function
+end
+
+start(it::Unfold) = it.seed
+next(it::Unfold, state) = it.f(state)
+done(it::Unfold, state) = (state==None)
+unfold(seed, f) = Unfold(seed, f)
 
 end # module Iterators
 
