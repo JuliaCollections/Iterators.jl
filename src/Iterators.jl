@@ -14,7 +14,8 @@ export
     chain,
     product,
     distinct,
-    partition
+    partition,
+    mapiterator
 
 
 # Infinite counting
@@ -331,6 +332,25 @@ function next(it::Partition, state)
 end
 
 done(it::Partition, state) = done(it.xs, state[1])
+
+
+# Apply a function to each value yielded
+
+immutable MapIterator{I}
+    f::Function
+    xs::I
+end
+
+mapiterator(f::Function, xs) = MapIterator(f, xs)
+
+start(it::MapIterator) = start(it.xs)
+
+function next(it::MapIterator, state)
+    x, state = next(it.xs, state)
+    (it.f(x), state)
+end
+
+done(it::MapIterator, state) = done(it.xs, state)
 
 end # module Iterators
 
