@@ -12,7 +12,10 @@ export
     chain,
     product,
     distinct,
-    partition
+    partition,
+    subset,
+    combination,
+    permutation
 
 
 # Infinite counting
@@ -333,6 +336,115 @@ function next(it::Partition, state)
 end
 
 done(it::Partition, state) = done(it.xs, state[1])
+
+# Iterate over all subsets of a collection
+
+type Subset
+    xs
+end
+
+function subset(xs)
+    Subset(xs)
+end
+
+function start(it::Subset)
+    return 0
+end
+
+function next(it::Subset, state)
+    ss = Array(eltype(it.xs), 0)
+    for i = 1:length(it.xs)
+        if state & (1 << (i-1)) != 0
+            push!(ss, it.xs[i])
+        end
+    end
+    (ss, state+1)
+end
+
+function done(it::Subset, state)
+    state >= 2 ^ length(it.xs)
+end
+
+# Iterate all combinations of a collection
+
+type Combination
+    xs
+    n
+end
+
+function combination(xs, n)
+    Combination(xs, n)
+end
+
+function start(it::Combination)
+    return collect(1:it.n)
+end
+
+function combo_incr!(state, l, n)
+    for i = 0:(n-1)
+        if state[end-i] < l - i
+            state[end-i] += 1
+            state[(end-i+1):end] = (state[end-i]+1):(state[end-i]+i)
+            return true
+        end
+    end
+    return false
+end
+
+function next(it::Combination, state)
+    combo_incr!(state, length(it.xs), it.n)
+    combo = Array(eltype(it.xs), length(state))
+    for i = 1:length(state)
+        combo[i] = it.xs[state[i]]
+    end
+    return (combo, state)
+end
+
+function done(it::Combination, state)
+    for i = 0:(it.n-1)
+        if state[end-i] != length(it.xs) - i
+            return false
+        end
+    end
+    true
+end
+
+# Iterate all permutaitons
+# Based on the sample code given in the Python itertools documentation
+# (http://docs.python.org/2/library/itertools.html#itertools.permutations)
+
+function permutation(pool, r)
+    Task() do
+        n = length(pool)
+        if r > n | n == 0
+            return
+        end
+        indices = collect(1:n)
+        cycles = collect(n:-1:n-r+1)
+        produce(pool[1:r])
+        keep_going = true
+        while keep_going
+            keep_going = false
+            for i in r:-1:1
+                cycles[i] -= 1
+                if cycles[i] == 0
+                    indices[i:] = vcat(indices[i+1:], indices[i])
+                    cycles[i] = n - i + 1
+                else
+                    j = cycles[i]
+                    indices[i], indices[end-j+1] = indices[end-j+1], indices[i]
+                    produce([pool[i] for i in indices[1:r]])
+                    keep_going = true
+                    break
+                end
+            end
+        end
+    end
+end
+
+function permutation(pool)
+    permutation(pool, length(pool))
+end
 
 end # module Iterators
 
