@@ -237,11 +237,11 @@ function next(it::Product, state)
     ans = tuple(vs...)
 
     n = length(it.xss)
-    for i in 1:n
+    for i in n:-1:1
         if !done(it.xss[i], js[i])
             vs[i], js[i] = next(it.xss[i], js[i])
             break
-        elseif i == n
+        elseif i == 1
             vs = nothing
             break
         end
@@ -475,7 +475,7 @@ end
 
 function next(it::Subsets, state)
     ss = Array(eltype(it.xs), 0)
-    for i = 1:length(it.xs)
+    for i in 1:length(it.xs)
         if state[i]
             push!(ss, it.xs[i])
         end
