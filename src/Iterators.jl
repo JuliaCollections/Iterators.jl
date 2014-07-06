@@ -53,7 +53,7 @@ end
 
 eltype(it::Take) = eltype(it.xs)
 length(it::Take{false}) = it.n
-length(it::Take{true}) = min(it.n, length(xs)}
+length(it::Take{true}) = min(it.n, length(xs))
 
 take(xs, n::Int) = Take{haslength(xs),typeof(xs)}(xs, n)
 
