@@ -18,6 +18,10 @@ export
     subsets,
     iterate
 
+# convenience functions
+
+haslength(x) = applicable(length,x)
+all_have_length(xss) = all([haslength(xs) for xs in xss])
 
 # Infinite counting
 
@@ -39,15 +43,19 @@ done(it::Count, state) = false
 
 # Iterate through the first n elements
 
-immutable Take{I}
+# L ∈ {true,false} indicates whether or not the wrapped iterator
+# has a defined length
+
+immutable Take{L,I}
     xs::I
     n::Int
 end
 
 eltype(it::Take) = eltype(it.xs)
-length(it::Take) = it.n
+length(it::Take{false}) = it.n
+length(it::Take{true}) = min(it.n, length(xs)}
 
-take(xs, n::Int) = Take(xs, n)
+take(xs, n::Int) = Take{haslength(xs),typeof(xs)}(xs, n)
 
 start(it::Take) = (it.n, start(it.xs))
 
@@ -65,14 +73,18 @@ end
 
 # Iterator through all but the first n elements
 
-immutable Drop{I}
+# L ∈ {true,false} indicates whether or not the wrapped iterator
+# has a defined length
+
+immutable Drop{L,I}
     xs::I
     n::Int
 end
 
 eltype(it::Drop) = eltype(it.xs)
+length(it::Drop{true}) = max(length(it.xs)-it.n, 0)
 
-drop(xs, n::Int) = Drop(xs, n)
+drop(xs, n::Int) = Drop{haslength(xs),typeof(xs)}(xs, n)
 
 function start(it::Drop)
     xs_state = start(it.xs)
@@ -153,7 +165,10 @@ done(it::RepeatForever, state) = false
 
 # Concatenate the output of n iterators
 
-immutable Chain
+# L ∈ {true,false} indicates whether or not the wrapped iterator
+# has a defined length
+
+immutable Chain{L}
     xss::Vector{Any}
     function Chain(xss...)
         new({xss...})
@@ -167,8 +182,9 @@ function eltype(it::Chain)
         Any
     end
 end
+length(it::Chain{true}) = sum([length(x) for x in it.xss])
 
-chain(xss...) = Chain(xss...)
+chain(xss...) = Chain{all_have_length(xss)}(xss...)
 
 function start(it::Chain)
     i = 1
@@ -201,7 +217,10 @@ done(it::Chain, state) = state[1] > length(it.xss)
 
 # Cartesian product as a sequence of tuples
 
-immutable Product
+# L ∈ {true,false} indicates whether or not the wrapped iterator
+# has a defined length
+
+immutable Product{L}
     xss::Vector{Any}
     function Product(xss...)
         new({xss...})
@@ -209,9 +228,9 @@ immutable Product
 end
 
 eltype(p::Product) = tuple(map(eltype, p.xss)...)
-length(p::Product) = prod(map(length, p.xss))
+length(p::Product{true}) = prod(map(length, p.xss))
 
-product(xss...) = Product(xss...)
+product(xss...) = Product{all_have_length(xss)}(xss...)
 
 function start(it::Product)
     n = length(it.xss)
@@ -302,24 +321,26 @@ done(it::Distinct, state) = done(it.xs, state[1])
 #   partition(count(1), 2, 1) = (1,2), (2,3), (3,4) ...
 #   partition(count(1), 2, 3) = (1,2), (4,5), (7,8) ...
 
-immutable Partition{I}
+# L ∈ {true,false} indicates whether or not the wrapped iterator
+# has a defined length
+
+immutable Partition{L,I}
     xs::I
     n::Int
     step::Int
 end
 
 eltype(it::Partition) = tuple(fill(eltype(it.xs),it.n)...)
+length(it::Partition{true}) = iceil((length(it.xs)-(it.n-1))/it.step)
 
-function partition(xs, n::Int)
-    Partition(xs, n, n)
-end
+partition(xs, n::Int) = Partition{haslength(xs),typeof(xs)}(xs, n, n)
 
 function partition(xs, n::Int, step::Int)
     if step < 1
         error("Partition step must be at least 1.")
     end
 
-    Partition(xs, n, step)
+    Partition{haslength(xs),typeof(xs)}(xs, n, step)
 end
 
 function start(it::Partition)
@@ -464,9 +485,7 @@ end
 eltype(it::Subsets) = Array{eltype(it.xs),1}
 length(it::Subsets) = 1 << length(it.xs)
 
-function subsets(xs)
-    Subsets(xs)
-end
+subsets(xs) = Subsets(xs)
 
 function start(it::Subsets)
     # one extra bit to indicated that we are at the end
