@@ -11,6 +11,7 @@ export
     cycle,
     repeated,
     chain,
+    chain_from_iterable,
     product,
     distinct,
     partition,
@@ -185,11 +186,8 @@ done(it::RepeatForever, state) = false
 
 # Concatenate the output of n iterators
 
-immutable Chain
-    xss::Vector{Any}
-    function Chain(xss...)
-        new({xss...})
-    end
+immutable Chain{I}
+    xss::I
 end
 
 function eltype(it::Chain)
@@ -200,35 +198,37 @@ function eltype(it::Chain)
     end
 end
 
-chain(xss...) = Chain(xss...)
+chain(xss...) = Chain(xss)
+chain_from_iterable(xss) = Chain(xss)
 
 function start(it::Chain)
-    i = 1
+    xss_state = start(it.xss)
+    xs = nothing
     xs_state = nothing
-    while i <= length(it.xss)
-        xs_state = start(it.xss[i])
-        if !done(it.xss[i], xs_state)
+    while !done(it.xss, xss_state)
+        xs, xss_state = next(it.xss, xss_state)
+        xs_state = start(xs)
+        if !done(xs, xs_state)
             break
         end
-        i += 1
     end
-    return i, xs_state
+    xss_state, xs, xs_state
 end
 
 function next(it::Chain, state)
-    i, xs_state = state
-    v, xs_state = next(it.xss[i], xs_state)
-    while done(it.xss[i], xs_state)
-        i += 1
-        if i > length(it.xss)
-            break
-        end
-        xs_state = start(it.xss[i])
+    xss_state, xs, xs_state = state
+    value, xs_state = next(xs, xs_state)
+    while done(xs, xs_state) && !done(it.xss, xss_state)
+        xs, xss_state = next(it.xss, xss_state)              
+        xs_state = start(xs)
     end
-    return v, (i, xs_state)
+    value, (xss_state, xs, xs_state)
 end
 
-done(it::Chain, state) = state[1] > length(it.xss)
+function done(it::Chain, state)
+    xss_state, xs, xs_state = state
+    done(it.xss, xss_state) && done(xs, xs_state)
+end
 
 
 # Cartesian product as a sequence of tuples

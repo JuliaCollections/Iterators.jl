@@ -71,6 +71,7 @@ end
 # -----
 
 @test collect(chain(1:2:5, 0.2:0.1:1.6)) == [1:2:5, 0.2:0.1:1.6]
+@test collect(chain_from_iterable([1:2:5, 0.2:0.1:1.6])) == [1:2:5, 0.2:0.1:1.6]
 
 # product
 # -------
