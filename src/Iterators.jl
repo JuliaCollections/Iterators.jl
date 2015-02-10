@@ -1,5 +1,6 @@
 module Iterators
 using Base
+import Compat
 
 import Base: start, next, done, count, take, eltype, length
 
@@ -28,7 +29,7 @@ immutable Count{S<:Number}
     step::S
 end
 
-eltype{S}(it::Count{S}) = S
+eltype{S}(::Type{Count{S}}) = S
 
 count(start::Number, step::Number) = Count(promote(start, step)...)
 count(start::Number)               = Count(start, one(start))
@@ -46,7 +47,7 @@ immutable Take{I}
     n::Int
 end
 
-eltype(it::Take) = eltype(it.xs)
+eltype{I}(::Type{Take{I}}) = eltype(I)
 
 take(xs, n::Int) = Take(xs, n)
 
@@ -72,7 +73,7 @@ immutable TakeStrict{I}
     n::Int
 end
 
-eltype(it::TakeStrict) = eltype(it.xs)
+eltype{I}(::Type{TakeStrict{I}}) = eltype(I)
 
 takestrict(xs, n::Int) = TakeStrict(xs, n)
 
@@ -107,7 +108,7 @@ immutable Drop{I}
     n::Int
 end
 
-eltype(it::Drop) = eltype(it.xs)
+eltype{I}(::Type{Drop{I}}) = eltype(I)
 
 drop(xs, n::Int) = Drop(xs, n)
 
@@ -133,7 +134,7 @@ immutable Cycle{I}
     xs::I
 end
 
-eltype(it::Cycle) = eltype(it.xs)
+eltype{I}(::Type{Cycle{I}}) = eltype(I)
 
 cycle(xs) = Cycle(xs)
 
@@ -160,7 +161,7 @@ immutable Repeat{O}
     n::Int
 end
 
-eltype{O}(it::Repeat{O}) = O
+eltype{O}(::Type{Repeat{O}}) = O
 length(it::Repeat) = it.n
 
 repeated(x, n) = Repeat(x, n)
@@ -174,7 +175,7 @@ immutable RepeatForever{O}
     x::O
 end
 
-eltype{O}(r::RepeatForever{O}) = O
+eltype{O}(::Type{RepeatForever{O}}) = O
 
 repeated(x) = RepeatForever(x)
 
@@ -324,7 +325,7 @@ immutable Distinct{I}
     Distinct(xs) = new(xs, Dict{Any, Int}())
 end
 
-eltype(it::Distinct) = eltype(it.xs)
+eltype{I}(::Type{Distinct{I}}) = eltype(I)
 
 distinct{I}(xs::I) = Distinct{I}(xs)
 
@@ -359,13 +360,15 @@ done(it::Distinct, state) = done(it.xs, state[1])
 #   partition(count(1), 2, 1) = (1,2), (2,3), (3,4) ...
 #   partition(count(1), 2, 3) = (1,2), (4,5), (7,8) ...
 
-immutable Partition{I}
+immutable Partition{I,N}
     xs::I
     n::Int
     step::Int
 end
 
-eltype(it::Partition) = tuple(fill(eltype(it.xs),it.n)...)
+Partition(xs,n,step) = Partition{typeof(xs),n}(xs,n,step)
+
+eltype{I,N}(::Type{Partition{I,N}}) = tuple(fill(eltype(I),N)...)
 
 function partition(xs, n::Int)
     Partition(xs, n, n)
@@ -439,8 +442,8 @@ immutable GroupBy{I}
     keyfunc::Function
 end
 
-eltype{I}(it::GroupBy{I}) = I
-eltype{I<:Ranges}(it::GroupBy{I}) = Array{eltype(it.xs),}
+eltype{I}(::Type{GroupBy{I}}) = I
+eltype{I<:Ranges}(::Type{GroupBy{I}}) = Array{eltype(I),1}
 
 function groupby(xs, keyfunc)
     GroupBy(xs, keyfunc)
@@ -515,11 +518,11 @@ end
 
 # Iterate over all subsets of a collection
 
-immutable Subsets
-    xs
+immutable Subsets{I}
+    xs::I
 end
 
-eltype(it::Subsets) = Array{eltype(it.xs),1}
+eltype{I}(::Type{Subsets{I}}) = Array{eltype(I),1}
 length(it::Subsets) = 1 << length(it.xs)
 
 function subsets(xs)
