@@ -260,15 +260,20 @@ done(it::Chain, state) = state[1] > length(it.xss)
 
 immutable Product
     xss::Vector{Any}
-    function Product(xss...)
-        new(Any[xss...])
+    order::Bool
+    function Product(xss...;order=true)
+        if order
+            new(Any[xss...],order)
+        else
+            new(reverse(Any[xss...]),order)
+        end
     end
 end
 
 eltype(p::Product) = tuple(map(eltype, p.xss)...)
 length(p::Product) = prod(map(length, p.xss))
 
-product(xss...) = Product(xss...)
+product(xss...; order=true) = Product(xss..., order=order)
 
 function start(it::Product)
     n = length(it.xss)
@@ -291,7 +296,11 @@ end
 function next(it::Product, state)
     js = copy(state[1])
     vs = copy(state[2])
-    ans = tuple(vs...)
+    ans = if it.order 
+             tuple(vs...)
+          else
+             tuple(reverse(vs)...)
+          end 
 
     n = length(it.xss)
     for i in 1:n
