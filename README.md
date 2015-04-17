@@ -152,9 +152,9 @@ Install this package with `Pkg.add("Iterators")`
     i = 'c'
     ```
 
-- **product**(xs...)
+- **product**(xs..., [order])
 
-    Iterate over all combinations in the cartesian product of the inputs.
+    Iterate over all combinations in the cartesian product of the inputs. The `order` keyword argument specifies whether the elements are traversed in lexicographic order (`false`) or anti-lexicographic order (`true`, the default value).
 
     Example:
     ```julia
@@ -169,6 +169,21 @@ Install this package with `Pkg.add("Iterators")`
     p = (3,1)
     p = (1,2)
     p = (2,2)
+    p = (3,2)
+    ```
+    while
+    ```julia
+    for p in product(1:3,1:2,order=false)
+        @show p
+    end
+    ```
+    yields
+    ```
+    p = (1,1)
+    p = (1,2)
+    p = (2,1)
+    p = (2,2)
+    p = (3,1)
     p = (3,2)
     ```
 

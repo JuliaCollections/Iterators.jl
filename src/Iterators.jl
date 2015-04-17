@@ -19,7 +19,9 @@ export
     imap,
     subsets,
     iterate,
-    @itr
+    @itr,
+    AntiLexicographicOrder,
+    LexicographicOrder
 
 # Infinite counting
 
@@ -258,17 +260,30 @@ done(it::Chain, state) = state[1] > length(it.xss)
 
 # Cartesian product as a sequence of tuples
 
-immutable Product
+abstract SortingOrder
+
+abstract LexicographicOrder <: SortingOrder
+abstract AntiLexicographicOrder <: SortingOrder
+
+immutable Product{order}
     xss::Vector{Any}
-    function Product(xss...)
-        new(Any[xss...])
-    end
+    Product(xss...)=new(Any[xss...])
 end
+
 
 eltype(p::Product) = tuple(map(eltype, p.xss)...)
 length(p::Product) = prod(map(length, p.xss))
 
-product(xss...) = Product(xss...)
+function product(xss...; order=AntiLexicographicOrder)
+  if order==AntiLexicographicOrder
+    Product{order}(xss...)
+  elseif order==LexicographicOrder
+    Product{order}(reverse(xss)...)
+  else
+    error("Order '$(order)' unsupported")
+    Product{order}(xss...)
+  end
+end
 
 function start(it::Product)
     n = length(it.xss)
@@ -288,10 +303,16 @@ function start(it::Product)
     return js, vs
 end
 
-function next(it::Product, state)
+function next{T}(it::Product{T}, state)
     js = copy(state[1])
     vs = copy(state[2])
-    ans = tuple(vs...)
+    ans = if T==AntiLexicographicOrder
+             tuple(vs...)
+          elseif T==LexicographicOrder
+             tuple(reverse(vs)...)
+          else
+             error("Ordering '$(T)' not supported")
+          end 
 
     n = length(it.xss)
     for i in 1:n
