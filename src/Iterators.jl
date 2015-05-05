@@ -1,5 +1,6 @@
 module Iterators
 using Base
+using Compat
 
 import Base: start, next, done, count, take, eltype, length
 
@@ -265,7 +266,7 @@ immutable Product
     end
 end
 
-eltype(p::Product) = tuple(map(eltype, p.xss)...)
+eltype(p::Product) = (@compat Tuple{map(eltype, p.xss)...})
 length(p::Product) = prod(map(length, p.xss))
 
 product(xss...) = Product(xss...)
