@@ -15,7 +15,8 @@ export
     subsets,
     iterate,
     takenth,
-    @itr
+    @itr,
+    Concat
 
 
 # Some iterators have been moved into Base (and count has been renamed as well)
