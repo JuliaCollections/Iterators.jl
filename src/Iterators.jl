@@ -11,7 +11,7 @@ export
     cycle,
     repeated,
     chain,
-    chain_from_iterable,
+    concat,
     product,
     distinct,
     partition,
@@ -199,7 +199,7 @@ function eltype(it::Chain)
 end
 
 chain(xss...) = Chain(xss)
-chain_from_iterable(xss) = Chain(xss)
+flat(xss) = Chain(xss)
 
 function start(it::Chain)
     xss_state = start(it.xss)

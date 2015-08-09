@@ -128,13 +128,13 @@ Install this package with `Pkg.add("Iterators")`
     i => 'c'
     ```
 
-- **chain_from_iterable**(xss)
+- **flat**(xss)
 
     Iterate through any number of iterators contained in an iterable, in sequence.
 
     Example:
     ```julia
-    for i in chain_from_iterable([1:3, ['a', 'b', 'c']])
+    for i in flatten([1:3, ['a', 'b', 'c']])
         @show i
     end
     ```
