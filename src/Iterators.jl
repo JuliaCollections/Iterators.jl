@@ -1,15 +1,11 @@
 module Iterators
-using Base
 
-import Base: start, next, done, count, take, eltype, length
+using Compat
+import Base: start, next, done, eltype, length
 
 export
-    count,
-    take,
     takestrict,
-    drop,
-    cycle,
-    repeated,
+    repeatedly,
     chain,
     concat,
     product,
@@ -19,49 +15,160 @@ export
     imap,
     subsets,
     iterate,
+    takenth,
     @itr
 
-# Infinite counting
 
-immutable Count{S<:Number}
-    start::S
-    step::S
+# Some iterators have been moved into Base (and count has been renamed as well)
+if VERSION >= v"0.4.0-def+3323"
+
+    import Base: count
+    Base.@deprecate count(start::Number, step::Number) countfrom(start, step)
+    Base.@deprecate count(start::Number) countfrom(start)
+    Base.@deprecate count() countfrom()
+else
+
+    import Base: take, count
+
+    export
+        countfrom,
+        count,
+        take,
+        drop,
+        cycle,
+        repeated
+
+    # Infinite counting
+
+    immutable Count{S<:Number}
+        start::S
+        step::S
+    end
+
+    eltype{S}(it::Count{S}) = S
+
+    count(start::Number, step::Number) = Count(promote(start, step)...)
+    count(start::Number)               = Count(start, one(start))
+    count()                            = Count(0, 1)
+
+    # Deprecate on 0.3 as well?
+    countfrom(start::Number, step::Number) = count(start, step)
+    countfrom(start::Number)               = count(start)
+    countfrom()                            = count(1)
+
+    start(it::Count) = it.start
+    next(it::Count, state) = (state, state + it.step)
+    done(it::Count, state) = false
+
+
+    # Iterate through the first n elements
+
+    immutable Take{I}
+        xs::I
+        n::Int
+    end
+
+    eltype(it::Take) = eltype(it.xs)
+
+    take(xs, n::Int) = Take(xs, n)
+
+    start(it::Take) = (it.n, start(it.xs))
+
+    function next(it::Take, state)
+        n, xs_state = state
+        v, xs_state = next(it.xs, xs_state)
+        return v, (n - 1, xs_state)
+    end
+
+    function done(it::Take, state)
+        n, xs_state = state
+        return n <= 0 || done(it.xs, xs_state)
+    end
+
+
+    # Iterator through all but the first n elements
+
+    immutable Drop{I}
+        xs::I
+        n::Int
+    end
+
+    eltype(it::Drop) = eltype(it.xs)
+
+    drop(xs, n::Int) = Drop(xs, n)
+
+    function start(it::Drop)
+        xs_state = start(it.xs)
+        for i in 1:it.n
+            if done(it.xs, xs_state)
+                break
+            end
+
+            _, xs_state = next(it.xs, xs_state)
+        end
+        xs_state
+    end
+
+    next(it::Drop, state) = next(it.xs, state)
+    done(it::Drop, state) = done(it.xs, state)
+
+
+    # Cycle an iterator forever
+
+    immutable Cycle{I}
+        xs::I
+    end
+
+    eltype(it::Cycle) = eltype(it.xs)
+
+    cycle(xs) = Cycle(xs)
+
+    function start(it::Cycle)
+        s = start(it.xs)
+        return s, done(it.xs, s)
+    end
+
+    function next(it::Cycle, state)
+        s, d = state
+        if done(it.xs, s)
+            s = start(it.xs)
+        end
+        v, s = next(it.xs, s)
+        return v, (s, false)
+    end
+
+    done(it::Cycle, state) = state[2]
+
+    # Repeat an object n (or infinitely many) times.
+
+    immutable Repeat{O}
+        x::O
+        n::Int
+    end
+
+    eltype{O}(it::Repeat{O}) = O
+    length(it::Repeat) = it.n
+
+    repeated(x, n) = Repeat(x, n)
+
+    start(it::Repeat) = it.n
+    next(it::Repeat, state) = (it.x, state - 1)
+    done(it::Repeat, state) = state <= 0
+
+
+    immutable RepeatForever{O}
+        x::O
+    end
+
+    eltype{O}(r::RepeatForever{O}) = O
+
+    repeated(x) = RepeatForever(x)
+
+    start(it::RepeatForever) = nothing
+    next(it::RepeatForever, state) = (it.x, nothing)
+    done(it::RepeatForever, state) = false
 end
 
-eltype{S}(it::Count{S}) = S
-
-count(start::Number, step::Number) = Count(promote(start, step)...)
-count(start::Number)               = Count(start, one(start))
-count()                            = Count(0, 1)
-
-start(it::Count) = it.start
-next(it::Count, state) = (state, state + it.step)
-done(it::Count, state) = false
-
-
-# Iterate through the first n elements
-
-immutable Take{I}
-    xs::I
-    n::Int
-end
-
-eltype(it::Take) = eltype(it.xs)
-
-take(xs, n::Int) = Take(xs, n)
-
-start(it::Take) = (it.n, start(it.xs))
-
-function next(it::Take, state)
-    n, xs_state = state
-    v, xs_state = next(it.xs, xs_state)
-    return v, (n - 1, xs_state)
-end
-
-function done(it::Take, state)
-    n, xs_state = state
-    return n <= 0 || done(it.xs, xs_state)
-end
 
 
 # Iterate through the first n elements, throwing an exception if
@@ -89,7 +196,7 @@ function done(it::TakeStrict, state)
     if n <= 0
         return true
     elseif done(it.xs, xs_state)
-        error("In takestrict(xs, n), xs had fewer than n items to take.")
+        throw(ArgumentError("In takestrict(xs, n), xs had fewer than n items to take."))
     else
         return false
     end
@@ -100,88 +207,30 @@ function length(it::TakeStrict)
 end
 
 
-# Iterator through all but the first n elements
+# Repeat a function application n (or infinitely many) times.
 
-immutable Drop{I}
-    xs::I
+immutable RepeatCall
+    f::Function
     n::Int
 end
 
-eltype(it::Drop) = eltype(it.xs)
+length(it::RepeatCall) = it.n
+repeatedly(f, n) = RepeatCall(f, n)
 
-drop(xs, n::Int) = Drop(xs, n)
+start(it::RepeatCall) = it.n
+next(it::RepeatCall, state) = (it.f(), state - 1)
+done(it::RepeatCall, state) = state <= 0
 
-function start(it::Drop)
-    xs_state = start(it.xs)
-    for i in 1:it.n
-        if done(it.xs, xs_state)
-            break
-        end
 
-        _, xs_state = next(it.xs, xs_state)
-    end
-    xs_state
+immutable RepeatCallForever
+    f::Function
 end
 
-next(it::Drop, state) = next(it.xs, state)
-done(it::Drop, state) = done(it.xs, state)
+repeatedly(f) = RepeatCallForever(f)
 
-
-# Cycle an iterator forever
-
-immutable Cycle{I}
-    xs::I
-end
-
-eltype(it::Cycle) = eltype(it.xs)
-
-cycle(xs) = Cycle(xs)
-
-function start(it::Cycle)
-    s = start(it.xs)
-    return s, done(it.xs, s)
-end
-
-function next(it::Cycle, state)
-    s, d = state
-    if done(it.xs, s)
-        s = start(it.xs)
-    end
-    v, s = next(it.xs, s)
-    return v, (s, false)
-end
-
-done(it::Cycle, state) = state[2]
-
-# Repeat an object n (or infinitely many) times.
-
-immutable Repeat{O}
-    x::O
-    n::Int
-end
-
-eltype{O}(it::Repeat{O}) = O
-length(it::Repeat) = it.n
-
-repeated(x, n) = Repeat(x, n)
-
-start(it::Repeat) = it.n
-next(it::Repeat, state) = (it.x, state - 1)
-done(it::Repeat, state) = state <= 0
-
-
-immutable RepeatForever{O}
-    x::O
-end
-
-eltype{O}(r::RepeatForever{O}) = O
-
-repeated(x) = RepeatForever(x)
-
-start(it::RepeatForever) = nothing
-next(it::RepeatForever, state) = (it.x, nothing)
-done(it::RepeatForever, state) = false
-
+start(it::RepeatCallForever) = nothing
+next(it::RepeatCallForever, state) = (it.f(), nothing)
+done(it::RepeatCallForever, state) = false
 
 
 # Concatenate the output of n iterators
@@ -236,18 +285,24 @@ end
 immutable Product
     xss::Vector{Any}
     function Product(xss...)
-        new({xss...})
+        new(Any[xss...])
     end
 end
 
-eltype(p::Product) = tuple(map(eltype, p.xss)...)
+# Using @compat causes error JuliaLang/Compat.jl#81
+# eltype(p::Product) = @compat(Tuple{map(eltype, p.xss)...})
+if VERSION >= v"0.4-dev"
+    eltype(p::Product) = Tuple{map(eltype, p.xss)...}
+else
+    eltype(p::Product) = tuple(map(eltype, p.xss)...)
+end
 length(p::Product) = prod(map(length, p.xss))
 
 product(xss...) = Product(xss...)
 
 function start(it::Product)
     n = length(it.xss)
-    js = {start(xs) for xs in it.xss}
+    js = Any[start(xs) for xs in it.xss]
     if n == 0
         return js, nothing
     end
@@ -340,7 +395,13 @@ immutable Partition{I}
     step::Int
 end
 
-eltype(it::Partition) = tuple(fill(eltype(it.xs),it.n)...)
+# Using @compat causes error JuliaLang/Compat.jl#81
+# eltype(it::Partition) = @compat(Tuple{fill(eltype(it.xs),it.n)...})
+if VERSION >= v"0.4-dev"
+    eltype(it::Partition) = Tuple{fill(eltype(it.xs),it.n)...}
+else
+    eltype(it::Partition) = tuple(fill(eltype(it.xs),it.n)...)
+end
 
 function partition(xs, n::Int)
     Partition(xs, n, n)
@@ -348,7 +409,7 @@ end
 
 function partition(xs, n::Int, step::Int)
     if step < 1
-        error("Partition step must be at least 1.")
+        throw(ArgumentError("Partition step must be at least 1."))
     end
 
     Partition(xs, n, step)
@@ -410,15 +471,20 @@ done(it::Partition, state) = done(it.xs, state[1])
 #       ["bar", "book", "baz"]
 #       ["zzz"]
 immutable GroupBy{I}
-    xs::I
     keyfunc::Function
+    xs::I
 end
 
 eltype{I}(it::GroupBy{I}) = I
-eltype{I<:Ranges}(it::GroupBy{I}) = Array{eltype(it.xs),}
+eltype{I<:Range}(it::GroupBy{I}) = Array{eltype(it.xs),}
 
-function groupby(xs, keyfunc)
-    GroupBy(xs, keyfunc)
+function groupby(xs, keyfunc::Function)
+    Base.warn_once("groupby(xs, keyfunc) should be groupby(keyfunc, xs)")
+    groupby(keyfunc, xs)
+end
+
+function groupby(keyfunc, xs)
+    GroupBy(keyfunc, xs)
 end
 
 function start(it::GroupBy)
@@ -468,7 +534,7 @@ immutable IMap
 end
 
 function imap(mapfunc, it1, its...)
-    IMap(mapfunc, {it1, its...})
+    IMap(mapfunc, Any[it1, its...])
 end
 
 function start(it::IMap)
@@ -531,8 +597,86 @@ function done(it::Subsets, state)
     state[end]
 end
 
-# Unfolding (anamorphism)
-# Outputs the stream: seed, f(seed), f(f(seed)), ...
+
+# Iterate over all subsets of a collection with a given size
+
+immutable Binomial{T}
+    xs::Array{T,1}
+    n::Int64
+    k::Int64
+end
+
+eltype(it::Binomial) = Array{eltype(it.xs),1}
+length(it::Binomial) = binomial(it.n,it.k)
+
+subsets(xs,k) = Binomial(xs,length(xs),k)
+
+start(it::Binomial) = (collect(Int64, 1:it.k), false)
+
+function next(it::Binomial, state::(@compat Tuple{Array{Int64,1}, Bool}))
+    idx = state[1]
+    set = it.xs[idx]
+    i = it.k
+    while(i>0)
+        if idx[i] < it.n - it.k + i
+            idx[i] += 1
+            idx[i+1:it.k] = idx[i]+1:idx[i]+it.k-i
+            break
+        else
+            i -= 1
+        end
+    end
+    if i==0
+        return set, (idx,true)
+    else
+        return set, (idx,false)
+    end
+end
+
+done(it::Binomial, state::(@compat Tuple{Array{Int64,1}, Bool})) = state[2]
+
+
+# takenth(xs,n): take every n'th element from xs
+
+immutable TakeNth{I}
+    xs::I
+    interval::Uint
+end
+
+function takenth(xs, interval::Integer)
+    if interval <= 0
+        throw(ArgumentError(string("expected interval to be 1 or more, ",
+                                   "got $interval")))
+    end
+    TakeNth(xs, convert(Uint, interval))
+end
+eltype(en::TakeNth) = eltype(en.xs)
+
+
+function start(it::TakeNth)
+    i = 1
+    state = start(it.xs)
+    while i < it.interval && !done(it.xs, state)
+        _, state = next(it.xs, state)
+        i += 1
+    end
+    return state
+end
+
+
+function next(it::TakeNth, state)
+    value, state = next(it.xs, state)
+    i = 1
+    while i < it.interval && !done(it.xs, state)
+        _, state = next(it.xs, state)
+        i += 1
+    end
+    return value, state
+end
+
+
+done(it::TakeNth, state) = done(it.xs, state)
+
 
 immutable Iterate{T}
     f::Function
@@ -551,9 +695,9 @@ using Base.Meta
 # it dispatches on macros defined below
 
 macro itr(ex)
-    isexpr(ex, :for) || error("@itr macro expects a for loop")
-    isexpr(ex.args[1], :(=)) || error("malformed or unsupported for loop in @itr macro")
-    isexpr(ex.args[1].args[2], :call) || error("@itr macro expects an iterator call, e.g. @itr for (x,y) = zip(a,b)")
+    isexpr(ex, :for) || throw(ArgumentError("@itr macro expects a for loop"))
+    isexpr(ex.args[1], :(=)) || throw(ArgumentError("malformed or unsupported for loop in @itr macro"))
+    isexpr(ex.args[1].args[2], :call) || throw(ArgumentError("@itr macro expects an iterator call, e.g. @itr for (x,y) = zip(a,b)"))
     iterator = ex.args[1].args[2].args[1]
     ex.args[1].args[2] = Expr(:tuple, ex.args[1].args[2].args[2:end]...)
     if iterator == :zip
@@ -569,7 +713,7 @@ macro itr(ex)
     elseif iterator == :chain
         rex = :(@chain($(esc(ex))))
     else
-        error("unknown or unsupported iterator $iterator in @itr macro")
+        throw(ArgumentError("unknown or unsupported iterator $iterator in @itr macro"))
     end
     return rex
 end
@@ -577,20 +721,20 @@ end
 macro zip(ex)
     @assert ex.head == :for
     @assert ex.args[1].head == :(=)
-    isexpr(ex.args[1].args[1], :tuple) || error("@zip macro needs explicit tuple arguments")
-    isexpr(ex.args[1].args[2], :tuple) || error("@zip macro needs explicit tuple arguments")
+    isexpr(ex.args[1].args[1], :tuple) || throw(ArgumentError("@zip macro needs explicit tuple arguments"))
+    isexpr(ex.args[1].args[2], :tuple) || throw(ArgumentError("@zip macro needs explicit tuple arguments"))
     n = length(ex.args[1].args[1].args)
-    length(ex.args[1].args[2].args) == n || error("unequal tuple sizes in @zip macro")
+    length(ex.args[1].args[2].args) == n || throw(ArgumentError("unequal tuple sizes in @zip macro"))
     body = esc(ex.args[2])
     vars = map(esc, ex.args[1].args[1].args)
     iters = map(esc, ex.args[1].args[2].args)
     states = [gensym("s") for i=1:n]
-    as = {Expr(:call, :(Base.start), iters[i]) for i=1:n}
+    as = Any[Expr(:call, :(Base.start), iters[i]) for i=1:n]
     startex = Expr(:(=), Expr(:tuple, states...), Expr(:tuple, as...))
-    ad = {Expr(:call, :(Base.done), iters[i], states[i]) for i = 1:n}
+    ad = Any[Expr(:call, :(Base.done), iters[i], states[i]) for i = 1:n]
     notdoneex = Expr(:call, :(!), Expr(:||, ad...))
-    nextex = Expr(:(=), Expr(:tuple, {Expr(:tuple, vars[i], states[i]) for i=1:n}...),
-                        Expr(:tuple, {Expr(:call, :(Base.next), iters[i], states[i]) for i=1:n}...))
+    nextex = Expr(:(=), Expr(:tuple, Any[Expr(:tuple, vars[i], states[i]) for i=1:n]...),
+                        Expr(:tuple, Any[Expr(:call, :(Base.next), iters[i], states[i]) for i=1:n]...))
     Expr(:let, Expr(:block,
         startex,
         Expr(:while, notdoneex, Expr(:block,
@@ -602,8 +746,8 @@ end
 macro enumerate(ex)
     @assert ex.head == :for
     @assert ex.args[1].head == :(=)
-    isexpr(ex.args[1].args[1], :tuple) || error("@enumerate macro needs an explicit tuple argument")
-    length(ex.args[1].args[1].args) == 2 || error("lentgh of tuple must be 2 in @enumerate macro")
+    isexpr(ex.args[1].args[1], :tuple) || throw(ArgumentError("@enumerate macro needs an explicit tuple argument"))
+    length(ex.args[1].args[1].args) == 2 || throw(ArgumentError("lentgh of tuple must be 2 in @enumerate macro"))
     body = esc(ex.args[2])
     vars = map(esc, ex.args[1].args[1].args)
     if isexpr(ex.args[1].args[2], :tuple) && length(ex.args[1].args[2].args) == 1
@@ -630,8 +774,8 @@ macro _take(ex, strict)
     mname = strict ? "takestrict" : "take"
     @assert ex.head == :for
     @assert ex.args[1].head == :(=)
-    isexpr(ex.args[1].args[2], :tuple) || error("@$(mname) macro needs an explicit tuple argument")
-    length(ex.args[1].args[2].args) == 2 || error("length of tuple must be 2 in @$(mname) macro")
+    isexpr(ex.args[1].args[2], :tuple) || throw(ArgumentError("@$(mname) macro needs an explicit tuple argument"))
+    length(ex.args[1].args[2].args) == 2 || throw(ArgumentError("length of tuple must be 2 in @$(mname) macro"))
     body = esc(ex.args[2])
     var = esc(ex.args[1].args[1])
     iter = esc(ex.args[1].args[2].args[1])
@@ -650,7 +794,7 @@ macro _take(ex, strict)
         Expr(:(=), ind, Expr(:call, :(+), ind, 1)))
     if strict
         checkex = Expr(:if, Expr(:call, :(<), ind, n),
-            Expr(:call, :error, "in takestrict(xs, n), xs had fewer than n items to take."))
+            Expr(:call, :throw, ArgumentError("in takestrict(xs, n), xs had fewer than n items to take.")))
     else
         checkex = :nothing
     end
@@ -675,8 +819,8 @@ end
 macro drop(ex)
     @assert ex.head == :for
     @assert ex.args[1].head == :(=)
-    isexpr(ex.args[1].args[2], :tuple) || error("@drop macro needs an explicit tuple argument")
-    length(ex.args[1].args[2].args) == 2 || error("length of tuple must be 2 in @drop macro")
+    isexpr(ex.args[1].args[2], :tuple) || throw(ArgumentError("@drop macro needs an explicit tuple argument"))
+    length(ex.args[1].args[2].args) == 2 || throw(ArgumentError("length of tuple must be 2 in @drop macro"))
     body = esc(ex.args[2])
     var = esc(ex.args[1].args[1])
     iter = esc(ex.args[1].args[2].args[1])
@@ -708,7 +852,7 @@ end
 macro chain(ex)
     @assert ex.head == :for
     @assert ex.args[1].head == :(=)
-    isexpr(ex.args[1].args[2], :tuple) || error("@chain macro needs explicit tuple arguments")
+    isexpr(ex.args[1].args[2], :tuple) || throw(ArgumentError("@chain macro needs explicit tuple arguments"))
     n = length(ex.args[1].args[2].args)
     body = esc(ex.args[2])
     var = esc(ex.args[1].args[1])

@@ -1,5 +1,12 @@
 # Iterators.jl
 
+Julia 0.3 [![Iterators](http://pkg.julialang.org/badges/Iterators_release.svg)](http://pkg.julialang.org/?pkg=Iterators&ver=release)
+
+Julia 0.4 [![Iterators](http://pkg.julialang.org/badges/Iterators_nightly.svg)](http://pkg.julialang.org/?pkg=Iterators&ver=nightly)
+
+[![Build Status](http://img.shields.io/travis/JuliaLang/Iterators.jl.svg)](https://travis-ci.org/JuliaLang/Iterators.jl) [![Coverage Status](http://img.shields.io/coveralls/JuliaLang/Iterators.jl.svg)](https://coveralls.io/r/JuliaLang/Iterators.jl)
+
+
 Common functional iterator patterns.
 
 ## Installation
@@ -10,102 +17,26 @@ Install this package with `Pkg.add("Iterators")`
 
 -----------
 
-- **count**([start, [step]])
-
-    Count, starting at ``start`` and incrementing by ``step``.  By default, ``start=0`` and ``step=1``.
-
-    Example:
-    ```julia
-    for i in take(count(5,5),5)
-        @show i
-    end
-    ```
-    yields
-    ```
-    i => 5
-    i => 10
-    i => 15
-    i => 20
-    i => 25
-    ```
-
-- **take**(xs, n)
-
-    Iterate through at most n elements from `xs`.
-
-    Example:
-    ```julia
-    for i in take(1:100, 5)
-        @show i
-    end
-    ```
-
-    ```
-    i => 1
-    i => 2
-    i => 3
-    i => 4
-    i => 4
-    ```
-
 - **takestrict**(xs, n)
 
   Equivalent to `take`, but will throw an exception if fewer than `n` items
   are encountered in `xs`.
 
-- **drop**(xs, n)
+- **repeatedly**(f, [n])
 
-    Iterate through all but the first n elements of `xs`
+    Call a function `n` times, or infinitely if `n` is omitted.
 
     Example:
     ```julia
-    for i in drop(1:10, 5)
-        @show i
+    for t in repeatedly(time_ns, 3)
+        @show t
     end
     ```
 
     ```
-    i => 6
-    i => 7
-    i => 8
-    i => 9
-    i => 10
-    ```
-
-- **cycle**(xs)
-
-    Repeat an iterator in a cycle forever.
-
-    Example:
-    ```julia
-    for i in take(cycle(1:3), 5)
-        @show i
-    end
-    ```
-
-    ```
-    i => 1
-    i => 2
-    i => 3
-    i => 1
-    i => 2
-    ```
-
-- **repeated**(x, [n])
-
-    Repeat one value `n` times, on infinitely if `n` is omitted.
-
-    Example:
-    ```julia
-    for i in repeated("Hello", 3)
-        @show i
-    end
-    ```
-
-    ```
-    i => "Hello"
-    i => "Hello"
-    i => "Hello"
+    t = 0x0000592ff83caf87
+    t = 0x0000592ff83d8cf4
+    t = 0x0000592ff83dd11e
     ```
 
 - **chain**(xs...)
@@ -120,12 +51,12 @@ Install this package with `Pkg.add("Iterators")`
     ```
 
     ```
-    i => 1
-    i => 2
-    i => 3
-    i => 'a'
-    i => 'b'
-    i => 'c'
+    i = 1
+    i = 2
+    i = 3
+    i = 'a'
+    i = 'b'
+    i = 'c'
     ```
 
 - **flat**(xss)
@@ -134,7 +65,7 @@ Install this package with `Pkg.add("Iterators")`
 
     Example:
     ```julia
-    for i in flatten([1:3, ['a', 'b', 'c']])
+    for i in flat([1:3, ['a', 'b', 'c']])
         @show i
     end
     ```
@@ -160,12 +91,12 @@ Install this package with `Pkg.add("Iterators")`
     ```
     yields
     ```
-    p => (1,1)
-    p => (2,1)
-    p => (3,1)
-    p => (1,2)
-    p => (2,2)
-    p => (3,2)
+    p = (1,1)
+    p = (2,1)
+    p = (3,1)
+    p = (1,2)
+    p = (2,2)
+    p = (3,2)
     ```
 
 
@@ -175,16 +106,32 @@ Install this package with `Pkg.add("Iterators")`
 
     Example:
     ```julia
-    for i in distinct([1,1,2,1,2,3,1,2,3,4])
+    for i in distinct([1,1,2,1,2,4,1,2,3,4])
         @show i
     end
     ```
 
     ```
-    i => 1
-    i => 2
-    i => 3
-    i => 4
+    i = 1
+    i = 2
+    i = 4
+    i = 3
+    ```
+
+- **takenth**(xs, n)
+    
+    Iterate through every n'th element of `xs`
+
+    Example:
+    ```julia
+    collect(takenth(5:15,3))
+    ```
+
+    ```
+    3-element Array{Int32,1}:
+      7
+     10
+     13
     ```
 
 - **partition**(xs, n, [step])
@@ -199,9 +146,9 @@ Install this package with `Pkg.add("Iterators")`
     ```
 
     ```
-    i => (1,2,3)
-    i => (4,5,6)
-    i => (7,8,9)
+    i = (1,2,3)
+    i = (4,5,6)
+    i = (7,8,9)
     ```
 
     If the `step` parameter is set, each tuple is separated by `step` values.
@@ -214,30 +161,31 @@ Install this package with `Pkg.add("Iterators")`
     ```
 
     ```
-    i => (1,2,3)
-    i => (3,4,5)
-    i => (5,6,7)
-    i => (7,8,9)
+    i = (1,2,3)
+    i = (3,4,5)
+    i = (5,6,7)
+    i = (7,8,9)
     ```
 
-- **groupby**(xs, f)
+- **groupby**(f, xs)
 
     Group consecutive values that share the same result of applying `f`.
 
     Example:
     ```julia
-    for i in groupby(["face", "foo", "bar", "book", "baz", "zzz"], x -> x[1])
+    for i in groupby(x -> x[1], ["face", "foo", "bar", "book", "baz", "zzz"])
         @show i
     end
     ```
 
     ```
-    i => ASCIIString["face","foo"]
-    i => ASCIIString["bar","book","baz"]
-    i => ASCIIString["zzz"]
+    i = ASCIIString["face","foo"]
+    i = ASCIIString["bar","book","baz"]
+    i = ASCIIString["zzz"]
     ```
 
 - **imap**(f, xs1, [xs2, ...])
+>>>>>>> upstream/master
 
     Iterate over values of a function applied to successive values from one or
     more iterators.
@@ -250,9 +198,9 @@ Install this package with `Pkg.add("Iterators")`
     ```
 
     ```
-    i => 5
-    i => 7
-    i => 9
+    i = 5
+    i = 7
+    i = 9
     ```
 
 - **subsets**(xs)
@@ -267,19 +215,36 @@ Install this package with `Pkg.add("Iterators")`
     ```
 
     ```
-    i => []
-    i => [1]
-    i => [2]
-    i => [1,2]
-    i => [3]
-    i => [1,3]
-    i => [2,3]
-    i => [1,2,3]
+    i = []
+    i = [1]
+    i = [2]
+    i = [1,2]
+    i = [3]
+    i = [1,3]
+    i = [2,3]
+    i = [1,2,3]
+    ```
+
+- **subsets**(xs, k)
+
+    Iterate over every subset of size `k` from a collection `xs`.
+
+    Example:
+    ```julia
+    for i in subsets([1,2,3],2)
+     @show i
+    end
+    ```
+
+    ```
+    i = [1,2]
+    i = [1,3]
+    i = [2,3]
     ```
 
 - **iterate**(f, x)
 
-    Iterate over succesive applications of `f`, as in `f(x), f(f(x)), f(f(f(x))), ...`.
+    Iterate over successive applications of `f`, as in `f(x), f(f(x)), f(f(f(x))), ...`.
 
     Example:
     ```julia
@@ -289,11 +254,107 @@ Install this package with `Pkg.add("Iterators")`
     ```
 
     ```
-    i => 1
-    i => 2
-    i => 4
-    i => 8
-    i => 16
+    i = 1
+    i = 2
+    i = 4
+    i = 8
+    i = 16
+    ```
+
+## Moved Base Julia in 0.4, but still provided here for 0.3
+
+- **countfrom**([start, [step]])
+
+    Count, starting at ``start`` and incrementing by ``step``.  By default, ``start=0`` and ``step=1``.
+
+    Example:
+    ```julia
+    for i in take(countfrom(5,5),5)
+        @show i
+    end
+    ```
+    yields
+    ```
+    i = 5
+    i = 10
+    i = 15
+    i = 20
+    i = 25
+    ```
+
+- **take**(xs, n)
+
+    Iterate through at most n elements from `xs`.
+
+    Example:
+    ```julia
+    for i in take(1:100, 5)
+        @show i
+    end
+    ```
+
+    ```
+    i = 1
+    i = 2
+    i = 3
+    i = 4
+    i = 5
+    ```
+
+
+- **drop**(xs, n)
+
+    Iterate through all but the first n elements of `xs`
+
+    Example:
+    ```julia
+    for i in drop(1:10, 5)
+        @show i
+    end
+    ```
+
+    ```
+    i = 6
+    i = 7
+    i = 8
+    i = 9
+    i = 10
+    ```
+
+- **cycle**(xs)
+
+    Repeat an iterator in a cycle forever.
+
+    Example:
+    ```julia
+    for i in take(cycle(1:3), 5)
+        @show i
+    end
+    ```
+
+    ```
+    i = 1
+    i = 2
+    i = 3
+    i = 1
+    i = 2
+    ```
+
+- **repeated**(x, [n])
+
+    Repeat one value `n` times, on infinitely if `n` is omitted.
+
+    Example:
+    ```julia
+    for i in repeated("Hello", 3)
+        @show i
+    end
+    ```
+
+    ```
+    i = "Hello"
+    i = "Hello"
+    i = "Hello"
     ```
 
 ## The `@itr` macro for automatic inlining in `for` loops
