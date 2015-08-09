@@ -7,7 +7,7 @@ export
     takestrict,
     repeatedly,
     chain,
-    concat,
+    flat,
     product,
     distinct,
     partition,
