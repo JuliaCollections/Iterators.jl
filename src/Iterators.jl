@@ -233,7 +233,7 @@ next(it::RepeatCallForever, state) = (it.f(), nothing)
 done(it::RepeatCallForever, state) = false
 
 
-# Concatenate the output of n iterators
+# Concatenate the output of iterators
 
 immutable Chain{I}
     xss::I
