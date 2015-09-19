@@ -17,7 +17,8 @@ export
     subsets,
     iterate,
     takenth,
-    @itr
+    @itr,
+    Concat
 
 
 # Some iterators have been moved into Base (and count has been renamed as well)
@@ -121,7 +122,6 @@ else
     end
 
     eltype(it::Cycle) = eltype(it.xs)
-
     cycle(xs) = Cycle(xs)
 
     function start(it::Cycle)
@@ -170,7 +170,48 @@ else
     done(it::RepeatForever, state) = false
 end
 
+# Given an iterator that produces iterators, concat the value obtained from them
 
+type Concat{T,state}
+    it::T
+    laststate::state
+    nextstate::state
+    Concat(it::T,firststate::state) = new(it)
+end
+Concat{T}(it::T) = Concat{T,Any}(it,((),nothing,0))
+
+function start{T,state}(it::Concat{T,state})
+    it_state = start(it.it)
+    if done(it.it, it_state)
+        return ((),it_state,start())
+    else
+        (current_it, it_state) = next(it.it, it_state)
+        child_state = start(current_it)
+        return (current_it, it_state, child_state)
+    end
+end
+
+function done(it::Concat,state)
+    it.laststate = state
+    current_it = state[1]
+    it_state = state[2]
+    child_state = state[3]
+    while done(current_it, child_state) && !done(it.it, it_state)
+        (current_it, it_state) = next(it.it, it_state)
+        child_state = start(current_it)
+    end
+    if done(current_it, child_state) && done(it.it, it_state)
+        return true
+    end
+    nextval, nextstate = next(current_it, child_state)
+    it.nextstate = (nextval, (current_it, it_state, nextstate))
+    return false
+end
+
+function next(it::Concat, state)
+    @assert it.laststate == state
+    it.nextstate
+end
 
 # Iterate through the first n elements, throwing an exception if
 # fewer than n items ar encountered.

@@ -392,3 +392,7 @@ end
 @test_chain [1,2,3] [:a, :b] ['w', 'x', 'y', 'z']
 @test_chain [1,2,3] @compat(Union{})[] ['w', 'x', 'y', 'z']
 @test_chain [1,2,3] 4 [('w',3), ('x',2), ('y',1), ('z',0)]
+
+# Concat
+@test collect(Concat(([1,2,3],[4,5,6]))) == [1,2,3,4,5,6]
+@test collect(Concat(repeated(take(countfrom(),2),3))) == [1,2,1,2,1,2]
