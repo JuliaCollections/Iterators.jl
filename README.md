@@ -59,13 +59,13 @@ Install this package with `Pkg.add("Iterators")`
     i = 'c'
     ```
 
-- **Interleave**
+- **interleave**
   
     Iterate through any number of itertors "in parallel". Take an element from each iterator in-turn.   
     
-    ``` 
+    ```julia 
     for i in interleave(1:3, ['a', 'b', 'c','d'])
-    @show i
+      @show i
     end
     ```
     
