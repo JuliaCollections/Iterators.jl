@@ -690,6 +690,82 @@ start(it::Iterate) = it.seed
 next(it::Iterate, state) = (state, it.f(state))
 @compat done(it::Iterate, state) = (state==Union{})
 
+# interleave, take turns taking an item from each iterable
+immutable Interleave
+    xss::Vector{Any}
+    function Interleave(xss...)
+        new(Any[xss...])
+    end
+end
+
+
+"""
+Interleave is the transpose of chain.
+It returns one element from each of the iterators in turn.
+If one of the interators runs dry then it is skippted
+eg:
+```
+collect(interleave([1,2,3],[10,20,30,40,50],[0.1,0.2]))
+>[1,10,0.1,2,20,0.2,3,30,40,50]
+```
+"""
+function interleave(xss...)
+    Interleave(xss...)
+end
+
+function start(it::Interleave)
+    xs_states = map(start, it.xss)
+    return 1, xs_states
+end
+
+function next(it::Interleave, state)
+    i, xs_states = state
+    
+    #Find a nonempty list
+    initial_i = i
+    while done(it.xss[i], xs_states[i]) #Look for one that isn't done
+        i += 1
+        if i == length(it.xss)+ 1
+            i=1
+        end
+        
+        if i==initial_i
+            #Then we have dones a full loop, and none are good
+            throw(BoundsError("Next was called on Interleave, but all contained iterators are Done"))
+        end
+    end
+    
+    #find value to return
+    v, xs_state = next(it.xss[i], xs_states[i])
+    
+    #update xs_state
+    new_xs_states = copy(xs_states)
+    new_xs_states[i]=xs_state 
+    
+    #Find next state
+    new_i=i+1
+    if new_i == length(it.xss)+ 1
+        new_i=1
+    end
+    
+    return v, (new_i, new_xs_states)
+end
+
+function done(it::Interleave, state)
+    i, xs_states = state
+    all(Bool[done(xs,xs_state) for (xs, xs_state) in zip(it.xss, xs_states)]) #can't use map as typeinference fails on map(done,[],[])
+end
+
+function eltype(it::Interleave)
+    #Literally Identical to eltype(it::Chain), could be combined by using a typeunion there
+    try
+        typejoin([eltype(xs) for xs in it.xss]...)
+    catch
+        Any
+    end
+end
+
+
 using Base.Meta
 
 ## @itr macro for auto-inlining in for loops
