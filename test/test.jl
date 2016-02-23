@@ -187,3 +187,8 @@ test_groupby(
 @test collect(everynth(10:20, 1)) == [10:20]
 
 
+#Interleave
+@test collect(interleave()) == [] 
+@test collect(interleave([1,2,3])) == [1,2,3]
+@test collect(interleave([1,2,3],[10,20,30])) == [1,10,2,20,3,30]
+@test collect(interleave([1,2,3],[10,20,30,40,50],[0.1,0.2])) == [1,10,0.1,2,20,0.2,3,30,40,50]

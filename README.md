@@ -59,6 +59,26 @@ Install this package with `Pkg.add("Iterators")`
     i = 'c'
     ```
 
+- **interleave**
+  
+    Iterate through any number of itertors "in parallel". Take an element from each iterator in-turn.   
+    
+    ```julia 
+    for i in interleave(1:3, ['a', 'b', 'c','d'])
+      @show i
+    end
+    ```
+    
+    ```
+    i = 1
+    i = 'a'
+    i = 2
+    i = 'b'
+    i = 3
+    i = 'c'
+    i = 'd'
+
+    ```
 - **product**(xs...)
 
     Iterate over all combinations in the cartesian product of the inputs.
