@@ -150,7 +150,7 @@ else
     eltype{O}(it::Repeat{O}) = O
     length(it::Repeat) = it.n
 
-    repeated(x, n) = Repeat(x, n)c
+    repeated(x, n) = Repeat(x, n)
 
     start(it::Repeat) = it.n
     next(it::Repeat, state) = (it.x, state - 1)
