@@ -713,8 +713,7 @@ function interleave(xss...)
     Interleave(xss...)
 end
 
-import start, Base.next, Base.done
-function Base.start(it::Interleave)
+function start(it::Interleave)
     xs_states = map(start, it.xss)
     return 1, xs_states
 end
