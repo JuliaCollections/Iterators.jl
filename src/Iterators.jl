@@ -765,6 +765,7 @@ function eltype(it::Interleave)
     end
 end
 
+iteratorsize{T<:Interleave}(::Type{T}) = SizeUnknown()
 
 using Base.Meta
 
