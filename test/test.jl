@@ -68,6 +68,10 @@ end
 
 @test collect(chain(1:2:5, 0.2:0.1:1.6)) == [1:2:5, 0.2:0.1:1.6]
 
+@test Base.iteratorsize(chain(1:2:5, cycle(4))) == Base.IsInfinite()
+@test Base.iteratorsize(chain(1:2:5, 0.2:0.1:1.6)) == Base.HasLength()
+@test Base.iteratorsize(chain(1:2:5, distinct([1,1,10]))) == Base.SizeUnknown()
+
 # product
 # -------
 

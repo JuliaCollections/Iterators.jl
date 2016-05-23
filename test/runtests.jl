@@ -393,3 +393,10 @@ end
 @test_chain [1,2,3] @compat(Union{})[] ['w', 'x', 'y', 'z']
 @test_chain [1,2,3] 4 [('w',3), ('x',2), ('y',1), ('z',0)]
 
+@testset "Chained iteratorsize inheritence" begin
+	@test Base.iteratorsize(chain(1:2:5, cycle(4))) == Base.IsInfinite()
+	@test Base.iteratorsize(chain(1:2:5, 0.2:0.1:1.6)) == Base.HasLength()
+	@test Base.iteratorsize(chain(1:2:5, distinct([1,1,10]))) == Base.SizeUnknown()
+
+	@test length(chain([1,2,3,4], eye(4))) == 20
+end
