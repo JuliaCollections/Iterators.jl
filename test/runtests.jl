@@ -393,3 +393,24 @@ end
 @test_chain [1,2,3] @compat(Union{})[] ['w', 'x', 'y', 'z']
 @test_chain [1,2,3] 4 [('w',3), ('x',2), ('y',1), ('z',0)]
 
+# @mergesorted
+# ---
+
+macro test_mergesorted(it1, it2, expected)
+    x = gensym()
+    w = :(mergesorted($it1, $it2))
+    quote
+	actual = Any[]
+	for $x in $w
+	    push!(actual, $x)
+	end
+	@test actual == $expected
+    end
+end
+
+@test_mergesorted 1:10 5:15 [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+@test_mergesorted 5:15 1:10 [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+@test_mergesorted [:a, :c, :d, :f] [:b, :c, :d, :e] [:a, :b, :c, :d, :e, :f]
+@test_mergesorted [] ["aaa", "bbb", "ccc"] ["aaa", "bbb", "ccc"]
+@test_mergesorted ["aaa", "bbb", "ccc"] [] ["aaa", "bbb", "ccc"]
+@test_mergesorted [] [] []
