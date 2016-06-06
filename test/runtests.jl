@@ -224,6 +224,25 @@ test_groupby(
 @test collect(takenth(10:20, 1)) == collect(10:20)
 
 
+# mergesorted
+
+macro test_mergesorted(expected, iterators...)
+    x = gensym()
+    w = :(mergesorted($(iterators...)))
+    quote
+	actual = Any[]
+	for $x in $w
+	    push!(actual, $x)
+	end
+	@test actual == $expected
+    end
+end
+
+@test_mergesorted [0, 1, 2, 3, 4, 5] 1:3 0:1 [2, 3, 4, 5]
+@test_mergesorted [] [] []
+@test_mergesorted [:a, :b, :c] [:b, :c] [:a] []
+
+
 ## @itr
 ## ====
 
