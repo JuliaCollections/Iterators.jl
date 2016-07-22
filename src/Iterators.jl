@@ -311,7 +311,7 @@ if VERSION >= v"0.4-dev"
 else
     eltype(p::Product) = tuple(map(eltype, p.xss)...)
 end
-length(p::Product) = prod(map(length, p.xss))
+length(p::Product) = isempty(p.xss) ? 1 : prod(map(length, p.xss))
 
 product(xss...) = Product(xss...)
 
