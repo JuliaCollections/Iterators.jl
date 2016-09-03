@@ -654,6 +654,10 @@ done(it::Binomial, state::(@compat Tuple{Array{Int64,1}, Bool})) = state[2]
 
 # nth : return the nth element in a collection
 
+if VERSION < v"0.4"
+    Core.BoundsError(xs, n) = Core.BoundsError()
+end
+
 function nth(xs, n::Integer)
     n > 0 || throw(BoundsError(xs, n))
     # catch, if possible
