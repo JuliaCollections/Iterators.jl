@@ -248,13 +248,31 @@ done(it::RepeatCallForever, state) = false
 
 # Concatenate the output of n iterators
 
-immutable Chain
-    xss::Vector{Any}
-    function Chain(xss...)
-        new(Any[xss...])
-    end
+immutable Chain{U}
+    xss::Vector{U}
 end
-iteratorsize{T<:Chain}(::Type{T}) = SizeUnknown()
+
+
+function Chain(xss...)
+		U=Union{[typeof(xs) for xs in xss]...}
+        Chain{U}(U[xss...])
+end
+
+function iteratorsize{U}(::Type{Chain{U}})
+	for itype in U.types
+		if iteratorsize(itype)==IsInfinite()
+			return IsInfinite()
+		elseif iteratorsize(itype)==SizeUnknown()
+			return SizeUnknown()
+		end
+	end
+	return HasLength()
+end
+
+function length(it::Chain)
+	@assert(iteratorsize(it)==HasLength())
+	sum(map(length, it.xss))
+end
 
 function eltype(it::Chain)
     try
