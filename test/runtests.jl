@@ -126,26 +126,26 @@ end
 
 # Empty arrays
 test_imap(
-  [],
+  Any[],
   []
 )
 
 # Simple operation
 test_imap(
-  [1,2,3],
+  Any[1,2,3],
   [1,2,3]
 )
 
 # Multiple arguments
 test_imap(
-  [5,7,9],
+  Any[5,7,9],
   [1,2,3],
   [4,5,6]
 )
 
 # Different-length arguments
 test_imap(
-  [2,4,6],
+  Any[2,4,6],
   [1,2,3],
   countfrom(1)
 )
@@ -163,7 +163,7 @@ end
 # Empty arrays
 test_groupby(
   [],
-  []
+  Any[]
 )
 
 # Singletons
