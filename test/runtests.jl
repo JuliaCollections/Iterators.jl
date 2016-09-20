@@ -130,6 +130,11 @@ test_imap(
   []
 )
 
+test_imap(
+  Any[],
+  Union{}[]
+)
+
 # Simple operation
 test_imap(
   Any[1,2,3],
@@ -163,6 +168,11 @@ end
 # Empty arrays
 test_groupby(
   [],
+  Any[]
+)
+
+test_groupby(
+  Union{}[],
   Any[]
 )
 
@@ -299,7 +309,8 @@ macro test_enumerate(input)
 end
 
 @test_enumerate [:a, :b, :c]
-@test_enumerate []
+@test_enumerate Union{}[]
+@test_enumerate Any[]
 
 # @take
 # -----
