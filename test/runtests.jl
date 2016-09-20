@@ -122,26 +122,26 @@ end
 
 # Empty arrays
 test_imap(
-  Any[],
-  @compat(Union{})[]
+  [],
+  []
 )
 
 # Simple operation
 test_imap(
-  Any[1,2,3],
+  [1,2,3],
   [1,2,3]
 )
 
 # Multiple arguments
 test_imap(
-  Any[5,7,9],
+  [5,7,9],
   [1,2,3],
   [4,5,6]
 )
 
 # Different-length arguments
 test_imap(
-  Any[2,4,6],
+  [2,4,6],
   [1,2,3],
   countfrom(1)
 )
@@ -158,60 +158,60 @@ end
 
 # Empty arrays
 test_groupby(
-  @compat(Union{})[],
-  Any[]
+  [],
+  []
 )
 
 # Singletons
 test_groupby(
   ["xxx"],
-  Any[["xxx"]]
+  [["xxx"]]
 )
 
 # Typical operation
 test_groupby(
   ["face", "foo", "bar", "book", "baz"],
-  Any[["face", "foo"], ["bar", "book", "baz"]]
+  [["face", "foo"], ["bar", "book", "baz"]]
 )
 
 # Trailing singletons
 test_groupby(
   ["face", "foo", "bar", "book", "baz", "xxx"],
-  Any[["face", "foo"], ["bar", "book", "baz"], ["xxx"]]
+  [["face", "foo"], ["bar", "book", "baz"], ["xxx"]]
 )
 
 # Leading singletons
 test_groupby(
   ["xxx", "face", "foo", "bar", "book", "baz"],
-  Any[["xxx"], ["face", "foo"], ["bar", "book", "baz"]]
+  [["xxx"], ["face", "foo"], ["bar", "book", "baz"]]
 )
 
 # Middle singletons
 test_groupby(
   ["face", "foo", "xxx", "bar", "book", "baz"],
-  Any[["face", "foo"], ["xxx"], ["bar", "book", "baz"]]
+  [["face", "foo"], ["xxx"], ["bar", "book", "baz"]]
 )
 
 
 # subsets
 # -------
 
-@test collect(subsets(Any[])) == Any[Any[]]
+@test collect(subsets(Any[])) == [Any[]]
 
-@test collect(subsets([:a])) == Any[Symbol[], Symbol[:a]]
+@test collect(subsets([:a])) == [Symbol[], Symbol[:a]]
 
 @test collect(subsets([:a, :b, :c])) ==
-      Any[Symbol[], Symbol[:a], Symbol[:b], Symbol[:a, :b], Symbol[:c],
+      [Symbol[], Symbol[:a], Symbol[:b], Symbol[:a, :b], Symbol[:c],
           Symbol[:a, :c], Symbol[:b, :c], Symbol[:a, :b, :c]]
 
 
 # subsets of size k
 # -----------------
 
-@test collect(subsets(Any[],0)) == Any[Any[]]
-@test collect(subsets([:a, :b, :c],1)) == Any[Symbol[:a], Symbol[:b], Symbol[:c]]
-@test collect(subsets([:a, :b, :c],2)) == Any[Symbol[:a,:b], Symbol[:a,:c], Symbol[:b,:c]]
-@test collect(subsets([:a, :b, :c],3)) == Any[Symbol[:a,:b,:c]]
+@test collect(subsets(Any[],0)) == [Any[]]
+@test collect(subsets([:a, :b, :c],1)) == [Symbol[:a], Symbol[:b], Symbol[:c]]
+@test collect(subsets([:a, :b, :c],2)) == [Symbol[:a,:b], Symbol[:a,:c], Symbol[:b,:c]]
+@test collect(subsets([:a, :b, :c],3)) == [Symbol[:a,:b,:c]]
 @test length(collect(subsets(collect(1:4),1))) == binomial(4,1)
 @test length(collect(subsets(collect(1:4),2))) == binomial(4,2)
 @test length(collect(subsets(collect(1:4),3))) == binomial(4,3)
@@ -220,16 +220,16 @@ test_groupby(
 
 # nth element
 # -----------
-for xs in Any[[1, 2, 3], 1:3, reshape(1:3, 3, 1)]
+for xs in [[1, 2, 3], 1:3, reshape(1:3, 3, 1)]
     @test nth(xs, 3) == 3
     @test_throws BoundsError nth(xs, 0)
     @test_throws BoundsError nth(xs, 4)
-end 
+end
 
-for xs in Any[take(1:3, 3), drop(-1:3, 2)]
+for xs in [take(1:3, 3), drop(-1:3, 2)]
     @test nth(xs, 3) == 3
     @test_throws BoundsError nth(xs, 0)
-end 
+end
 
 s = subsets([1, 2, 3])
 @test_throws BoundsError nth(s, 0)
@@ -271,7 +271,7 @@ end
 
 @test_zip [1,2,3] [:a, :b, :c] ['x', 'y', 'z']
 @test_zip [1,2,3] [:a, :b] ['w', 'x', 'y', 'z']
-@test_zip [1,2,3] @compat(Union{})[] ['w', 'x', 'y', 'z']
+@test_zip [1,2,3] [] ['w', 'x', 'y', 'z']
 
 # @enumerate
 # ----------
@@ -294,7 +294,7 @@ macro test_enumerate(input)
 end
 
 @test_enumerate [:a, :b, :c]
-@test_enumerate @compat(Union{})[]
+@test_enumerate []
 
 # @take
 # -----
@@ -318,7 +318,7 @@ end
 @test_take [:a, :b, :c] 2
 @test_take [:a, :b, :c] 5
 @test_take [:a, :b, :c] 0
-@test_take @compat(Union{})[] 2
+@test_take [] 2
 @test_take Any[] 0
 @test_take [(:a,1), (:b,2), (:c,3)] 2
 
@@ -357,7 +357,7 @@ end
 @test_takestrict [:a, :b, :c] 3
 @test_takestrict [:a, :b, :c] 5
 @test_takestrict [:a, :b, :c] 0
-@test_takestrict @compat(Union{})[] 2
+@test_takestrict [] 2
 @test_takestrict Any[] 0
 @test_takestrict [(:a,1), (:b,2), (:c,3)] 2
 @test_takestrict [(:a,1), (:b,2), (:c,3)] 3
@@ -385,7 +385,7 @@ end
 @test_drop [:a, :b, :c] 2
 @test_drop [:a, :b, :c] 5
 @test_drop [:a, :b, :c] 0
-@test_drop @compat(Union{})[] 2
+@test_drop [] 2
 @test_drop Any[] 0
 @test_drop [(:a,1), (:b,2), (:c,3)] 2
 
@@ -411,6 +411,6 @@ end
 
 @test_chain [1,2,3] [:a, :b, :c] ['x', 'y', 'z']
 @test_chain [1,2,3] [:a, :b] ['w', 'x', 'y', 'z']
-@test_chain [1,2,3] @compat(Union{})[] ['w', 'x', 'y', 'z']
+@test_chain [1,2,3] [] ['w', 'x', 'y', 'z']
 @test_chain [1,2,3] 4 [('w',3), ('x',2), ('y',1), ('z',0)]
 
