@@ -169,53 +169,53 @@ test_groupby(
 # Singletons
 test_groupby(
   ["xxx"],
-  [["xxx"]]
+  Any[["xxx"]]
 )
 
 # Typical operation
 test_groupby(
   ["face", "foo", "bar", "book", "baz"],
-  [["face", "foo"], ["bar", "book", "baz"]]
+  Any[["face", "foo"], ["bar", "book", "baz"]]
 )
 
 # Trailing singletons
 test_groupby(
   ["face", "foo", "bar", "book", "baz", "xxx"],
-  [["face", "foo"], ["bar", "book", "baz"], ["xxx"]]
+  Any[["face", "foo"], ["bar", "book", "baz"], ["xxx"]]
 )
 
 # Leading singletons
 test_groupby(
   ["xxx", "face", "foo", "bar", "book", "baz"],
-  [["xxx"], ["face", "foo"], ["bar", "book", "baz"]]
+  Any[["xxx"], ["face", "foo"], ["bar", "book", "baz"]]
 )
 
 # Middle singletons
 test_groupby(
   ["face", "foo", "xxx", "bar", "book", "baz"],
-  [["face", "foo"], ["xxx"], ["bar", "book", "baz"]]
+  Any[["face", "foo"], ["xxx"], ["bar", "book", "baz"]]
 )
 
 
 # subsets
 # -------
 
-@test collect(subsets(Any[])) == [Any[]]
+@test collect(subsets(Any[])) == Any[Any[]]
 
-@test collect(subsets([:a])) == [Symbol[], Symbol[:a]]
+@test collect(subsets([:a])) == Any[Symbol[], Symbol[:a]]
 
 @test collect(subsets([:a, :b, :c])) ==
-      [Symbol[], Symbol[:a], Symbol[:b], Symbol[:a, :b], Symbol[:c],
+      Any[Symbol[], Symbol[:a], Symbol[:b], Symbol[:a, :b], Symbol[:c],
           Symbol[:a, :c], Symbol[:b, :c], Symbol[:a, :b, :c]]
 
 
 # subsets of size k
 # -----------------
 
-@test collect(subsets(Any[],0)) == [Any[]]
-@test collect(subsets([:a, :b, :c],1)) == [Symbol[:a], Symbol[:b], Symbol[:c]]
-@test collect(subsets([:a, :b, :c],2)) == [Symbol[:a,:b], Symbol[:a,:c], Symbol[:b,:c]]
-@test collect(subsets([:a, :b, :c],3)) == [Symbol[:a,:b,:c]]
+@test collect(subsets(Any[],0)) == Any[Any[]]
+@test collect(subsets([:a, :b, :c],1)) == Any[Symbol[:a], Symbol[:b], Symbol[:c]]
+@test collect(subsets([:a, :b, :c],2)) == Any[Symbol[:a,:b], Symbol[:a,:c], Symbol[:b,:c]]
+@test collect(subsets([:a, :b, :c],3)) == Any[Symbol[:a,:b,:c]]
 @test length(collect(subsets(collect(1:4),1))) == binomial(4,1)
 @test length(collect(subsets(collect(1:4),2))) == binomial(4,2)
 @test length(collect(subsets(collect(1:4),3))) == binomial(4,3)
@@ -224,13 +224,13 @@ test_groupby(
 
 # nth element
 # -----------
-for xs in [[1, 2, 3], 1:3, reshape(1:3, 3, 1)]
+for xs in Any[[1, 2, 3], 1:3, reshape(1:3, 3, 1)]
     @test nth(xs, 3) == 3
     @test_throws BoundsError nth(xs, 0)
     @test_throws BoundsError nth(xs, 4)
 end
 
-for xs in [take(1:3, 3), drop(-1:3, 2)]
+for xs in Any[take(1:3, 3), drop(-1:3, 2)]
     @test nth(xs, 3) == 3
     @test_throws BoundsError nth(xs, 0)
 end
