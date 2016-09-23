@@ -59,6 +59,26 @@ Install this package with `Pkg.add("Iterators")`
     i = 'c'
     ```
 
+- **flat**(xss)
+
+    Iterate through any number of iterators contained in an iterable, in sequence.
+
+    Example:
+    ```julia
+    for i in flat([1:3, ['a', 'b', 'c']])
+        @show i
+    end
+    ```
+
+    ```
+    i => 1
+    i => 2
+    i => 3
+    i => 'a'
+    i => 'b'
+    i => 'c'
+    ```
+
 - **product**(xs...)
 
     Iterate over all combinations in the cartesian product of the inputs.
@@ -177,6 +197,7 @@ Install this package with `Pkg.add("Iterators")`
     ```
 
 - **imap**(f, xs1, [xs2, ...])
+>>>>>>> upstream/master
 
     Iterate over values of a function applied to successive values from one or
     more iterators.
