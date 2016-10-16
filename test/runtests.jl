@@ -64,6 +64,16 @@ for j in cy1
 	i <= 10 || break
 end
 
+# ncycle
+# ------
+
+let i = 0
+    for j = ncycle(0:3,3)
+        @test j == i % 4
+        i += 1
+    end
+end
+
 # repeated
 # --------
 
