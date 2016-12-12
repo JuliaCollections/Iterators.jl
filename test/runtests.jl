@@ -1,7 +1,5 @@
 using Iterators, Base.Test
 
-import Base: flatten
-
 if VERSION >= v"0.5.0-dev+3305"
 	import Base: IsInfinite, SizeUnknown, HasLength, iteratorsize, HasShape
 end
@@ -76,7 +74,7 @@ end
 ncy1 = ncycle(0:3,3)
 
 @test eltype(ncy1) == Int
-@test collect(ncy1) == collect(flatten([0,1,2,3] for i=1:3))
+@test collect(ncy1) == collect(chain(([0,1,2,3] for i=1:3)...))
 
 i = 0
 for j in ncy1
