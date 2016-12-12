@@ -642,10 +642,9 @@ An iterator that cycles through `iter` `n` times.
 """
 ncycle(iter, n::Int) = NCycle(iter, n)
 
-eltype(nc::NCycle) = eltype(nc.iter)
+eltype{I}(nc::NCycle{I}) = eltype(I)
 length(nc::NCycle) = nc.n*length(nc.iter)
-size(nc::NCycle) = (size(nc.iter)..., nc.n)
-iteratorsize{I}(::Type{NCycle{I}}) = iteratorsize(I)
+iteratorsize{I}(::Type{NCycle{I}}) = HasLength()
 iteratoreltype{I}(::Type{NCycle{I}}) = iteratoreltype(I)
 
 start(nc::NCycle) = (start(nc.iter), 0)
