@@ -73,11 +73,15 @@ end
 
 ncy1 = ncycle(0:3,3)
 
-@test eltype(ncy1) == Int
-@test collect(ncy1) == collect(chain(([0,1,2,3] for i=1:3)...))
-
 i = 0
 for j in ncy1
+    @test j == i % 4
+    i += 1
+end
+
+@test eltype(ncy1) == Int
+i = 0
+for j in collect(ncy1)
     @test j == i % 4
     i += 1
 end
