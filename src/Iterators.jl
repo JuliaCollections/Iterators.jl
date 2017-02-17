@@ -33,9 +33,13 @@ if VERSION < v"0.5.0-dev+3305"
     function iteratorsize(v)
         error("Do not call this on older versions")
     end
+
+    function iteratoreltype(v)
+        error("Do not call this on older versions")
+    end
 else
-    import Base: iteratorsize, SizeUnknown, IsInfinite,
-                HasLength, HasShape
+    import Base: iteratorsize, iteratoreltype, SizeUnknown, IsInfinite,
+                HasLength, HasShape, EltypeUnknown
 end
 
 
@@ -137,6 +141,7 @@ length(it::Chain{Tuple{}}) = 0
 length(it::Chain) = sum(length, it.xss)
 
 eltype{T}(::Type{Chain{T}}) = typejoin([eltype(t) for t in T.parameters]...)
+iteratoreltype(c::Chain) = EltypeUnknown()
 
 function start(it::Chain)
     i = 1
