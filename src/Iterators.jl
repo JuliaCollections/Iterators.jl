@@ -57,7 +57,7 @@ Base.@deprecate count() countfrom()
 # Iterate through the first n elements, throwing an exception if
 # fewer than n items ar encountered.
 
-immutable TakeStrict{I}
+struct TakeStrict{I}
     xs::I
     n::Int
 end
@@ -110,7 +110,7 @@ end
 
 # Repeat a function application n (or infinitely many) times.
 
-immutable RepeatCall
+struct RepeatCall
     f::Function
     n::Int
 end
@@ -142,7 +142,7 @@ start(it::RepeatCall) = it.n
 next(it::RepeatCall, state) = (it.f(), state - 1)
 done(it::RepeatCall, state) = state <= 0
 
-immutable RepeatCallForever
+struct RepeatCallForever
     f::Function
 end
 iteratorsize{T<:RepeatCallForever}(::Type{T}) = IsInfinite()
@@ -155,7 +155,7 @@ done(it::RepeatCallForever, state) = false
 
 
 # Concatenate the output of n iterators
-immutable Chain{T<:Tuple}
+struct Chain{T<:Tuple}
     xss::T
 end
 
@@ -216,7 +216,7 @@ done(it::Chain, state) = state[1] > length(it.xss)
 
 # Cartesian product as a sequence of tuples
 
-immutable Product{T<:Tuple}
+struct Product{T<:Tuple}
     xss::T
 end
 
@@ -282,7 +282,7 @@ done(it::Product, state) = state[2] === nothing
 
 # Filter out reccuring elements.
 
-immutable Distinct{I, J}
+struct Distinct{I, J}
     xs::I
 
     # Map elements to the index at which it was first seen, so given an iterator
@@ -342,7 +342,7 @@ done(it::Distinct, state) = done(it.xs, state[1])
 #   partition(count(1), 2, 1) = (1,2), (2,3), (3,4) ...
 #   partition(count(1), 2, 3) = (1,2), (4,5), (7,8) ...
 
-immutable Partition{I, N}
+struct Partition{I, N}
     xs::I
     step::Int
 end
@@ -457,7 +457,7 @@ done(it::Partition, state) = done(it.xs, state[1])
 #       ["face", "foo"]
 #       ["bar", "book", "baz"]
 #       ["zzz"]
-immutable GroupBy{I}
+struct GroupBy{I}
     keyfunc::Function
     xs::I
 end
@@ -530,7 +530,7 @@ end
 # is done when any of the input iterators have been exhausted.
 # E.g.,
 #   imap(+, count(), [1, 2, 3]) = 1, 3, 5 ...
-immutable IMap
+struct IMap
     mapfunc::Base.Callable
     xs::Vector{Any}
 end
@@ -573,7 +573,7 @@ end
 
 # Iterate over all subsets of a collection
 
-immutable Subsets{C}
+struct Subsets{C}
     xs::C
 end
 iteratorsize{T<:Subsets}(::Type{T}) = HasLength()
@@ -644,7 +644,7 @@ end
 
 # Iterate over all subsets of a collection with a given size
 
-immutable Binomial{T}
+struct Binomial{T}
     xs::Vector{T}
     n::Int64
     k::Int64
@@ -658,7 +658,7 @@ length(it::Binomial) = binomial(it.n,it.k)
 
 subsets(xs,k) = Binomial(xs,length(xs),k)
 
-type BinomialIterState
+mutable struct BinomialIterState
     idx::Vector{Int64}
     done::Bool
 end
@@ -726,7 +726,7 @@ nth(xs::AbstractArray, n::Integer) = xs[n]
 
 # takenth(xs,n): take every n'th element from xs
 
-immutable TakeNth{I}
+struct TakeNth{I}
     xs::I
     interval::UInt
 end
@@ -783,7 +783,7 @@ end
 done(it::TakeNth, state) = done(it.xs, state)
 
 
-immutable Iterate{T}
+struct Iterate{T}
     f::Function
     seed::T
 end
@@ -824,7 +824,7 @@ done(it::Iterate, state) = (state==Union{})
 
 # peekiter(iter): possibility to peek the head of an iterator
 
-immutable PeekIter{I}
+struct PeekIter{I}
     it::I
 end
 
@@ -902,7 +902,7 @@ peek{T}(r::PeekIter{UnitRange{T}}, i) = done(r.it, i) ? Nullable{T}() : Nullable
 
 #NCycle - cycle through an object N times
 
-immutable NCycle{I}
+struct NCycle{I}
     iter::I
     n::Int
 end
