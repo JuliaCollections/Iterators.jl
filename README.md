@@ -9,6 +9,13 @@
 
 Common functional iterator patterns.
 
+## DEPRECATION
+
+Iterators.jl has been deprecated in favour of [IterTools.jl](https://github.com/JuliaCollections/IterTools.jl).
+Please update your package dependencies: Iterators 0.3.1 maps to IterTools 0.1.0.
+
+See [#104](https://github.com/JuliaCollections/Iterators.jl/issues/104) for more information.
+
 ## Installation
 
 Install this package with `Pkg.add("Iterators")`
@@ -98,7 +105,7 @@ Install this package with `Pkg.add("Iterators")`
     i = 3
     ```
 - **nth**(xs, n)
-    
+
     Return the n'th element of `xs`. Mostly useful for non indexable collections.
 
     Example:
@@ -111,7 +118,7 @@ Install this package with `Pkg.add("Iterators")`
     ```
 
 - **takenth**(xs, n)
-    
+
     Iterate through every n'th element of `xs`
 
     Example:
