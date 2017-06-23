@@ -2,6 +2,10 @@ __precompile__()
 
 module Iterators
 
+function __init__()
+    warn("Iterators.jl is deprecated; use IterTools.jl instead")
+end
+
 # gets around deprecation warnings in v0.6
 if isdefined(Base, :Iterators)
     import Base.Iterators: drop, countfrom, cycle, take, repeated
@@ -163,7 +167,7 @@ end
 
 """
     chain(xs...)
-    
+
 Iterate through any number of iterators in sequence.
 
 ```jldoctest
